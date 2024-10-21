@@ -7,7 +7,6 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
-  updateMyDataTable,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -26,11 +25,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDownIcon, SquarePen, CircleCheckBig } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+import { ChevronDownIcon, Ellipsis } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Editcell } from "./editcell";
+import Modal from "../Modal";
 
 export function DataTable({ columns, data }) {
   const [sorting, setSorting] = React.useState([]);
@@ -38,6 +49,9 @@ export function DataTable({ columns, data }) {
   const [statusFilter, setStatusFilter] = React.useState("All");
   const [countryFilter, setCountryFilter] = React.useState("All");
   const [dataset, setDataset] = React.useState(data);
+
+  const statuses = ["All", ...new Set(data.map((item) => item.status))];
+  const countries = ["All", ...new Set(data.map((item) => item.country))];
 
   const filteredData = React.useMemo(() => {
     let filtered = dataset;
@@ -47,7 +61,6 @@ export function DataTable({ columns, data }) {
     if (countryFilter !== "All") {
       filtered = filtered.filter((item) => item.country === countryFilter);
     }
-
     return filtered;
   }, [dataset, statusFilter, countryFilter]);
 
@@ -69,52 +82,52 @@ export function DataTable({ columns, data }) {
       sorting,
       columnFilters,
     },
-    meta: {
-      updateData: (rowIndex, columnId, value) =>
-        setDataset((prev) =>
-          prev.map((row, index) =>
-            index === rowIndex
-              ? {
-                  ...prev[rowIndex],
-                  [columnId]: value,
-                }
-              : row
-          )
-        ),
-    },
   });
-  const statuses = ["All", ...new Set(data.map((item) => item.status))];
-  const countries = ["All", ...new Set(data.map((item) => item.country))];
 
-  const [editingRow, setEditingRow] = React.useState(null);
-
-  const handleEdit = (row) => {
-    setEditingRow(row);
-  };
-
-  const handleSave = (row, column, value) => {
-    const rowIndex = dataset.findIndex((item) => item.id === row.original.id);
-    setDataset((prev) =>
-      prev.map((item, index) =>
-        index === rowIndex
-          ? {
-              ...prev[index],
-              [column.id]: value,
-            }
-          : item
-      )
-    );
-    setEditingRow(null);
-  };
   React.useEffect(() => {
     setDataset(data);
   }, [data]);
-  console.log("Dataset in table:", dataset);
-  console.log("Data in table:", data);
+  // console.log("Dataset in table:", dataset);
+  // console.log("Data in table:", data);
+
+  const handleDelete = (product_id) => {
+    const updatedDataset = dataset.filter(
+      (item) => item.product_id !== product_id
+    );
+    setDataset(updatedDataset);
+  };
+
+  const [isViewModalOpen, setIsViewModalOpen] = React.useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+
+  const [viewData, setViewData] = React.useState(null);
+  const handleView = (row) => {
+    setViewData(row.original);
+    setIsViewModalOpen(true);
+  };
+
+  const [editData, setEditData] = React.useState(null);
+  const handleEdit = (row) => {
+    setEditData(row.original);
+    setIsEditModalOpen(true);
+  };
+  const handleInputChange = (key, newValue) => {
+    setEditData((prev) => ({
+      ...prev,
+      [key]: newValue,
+    }));
+  };
+  const handleSaveEdit = () => {
+    const updatedDataset = dataset.map((item) =>
+      item.product_id === editData.product_id ? editData : item
+    );
+    setDataset(updatedDataset);
+    setIsEditModalOpen(false);
+  };
 
   return (
-    <div className="flex flex-col gap-9">
-      <div className="flex items-center py-4  justify-between">
+    <div className="flex flex-col gap-8">
+      <div className="flex items-center py-4  justify-between gap-5">
         <Input
           placeholder="Filter by product id..."
           value={table.getColumn("product_id")?.getFilterValue() ?? ""}
@@ -199,7 +212,8 @@ export function DataTable({ columns, data }) {
           </div>
         </div>
       </div>
-      <div className="rounded-md border">
+
+      <div className="rounded-md border max-w-[600px] md:min-w-full">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -220,7 +234,7 @@ export function DataTable({ columns, data }) {
             ))}
           </TableHeader>
           <TableBody>
-            {/* {table.getRowModel().rows?.length ? (
+            {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -235,64 +249,58 @@ export function DataTable({ columns, data }) {
                     </TableCell>
                   ))}
                   <TableCell>
-                    <SquarePen className="w-4 h-4 cursor-pointer" />
-                  </TableCell>
-                </TableRow>
-              ))
-           */}
-
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {cell.column.id === "select" ? (
-                        <Checkbox
-                          checked={cell.row.getIsSelected()}
-                          onCheckedChange={(value) =>
-                            cell.row.toggleSelected(!!value)
-                          }
-                          aria-label="Select row"
-                        />
-                      ) : editingRow && editingRow.id === row.id ? (
-                        <Editcell
-                          getValue={() => cell.getValue()}
-                          row={row}
-                          column={cell.column}
-                          table={table}
-                          onSave={(value) =>
-                            handleSave(row, cell.column, value)
-                          }
-                        />
-                      ) : (
-                        <Editcell
-                          getValue={() => cell.getValue()}
-                          row={row}
-                          column={cell.column}
-                          table={table}
-                          onSave={(value) =>
-                            handleSave(row, cell.column, value)
-                          }
-                          isEditing={false}
-                        />
-                      )}
-                    </TableCell>
-                  ))}
-                  <TableCell>
-                    {editingRow && editingRow.id === row.id ? (
-                      <CircleCheckBig
-                        onClick={() => setEditingRow(null)}
-                        className="h-4 w-4"
-                      />
-                    ) : (
-                      <SquarePen
-                        className="w-4 h-4 cursor-pointer"
-                        onClick={() => handleEdit(row)}
-                      />
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Ellipsis className="w-4 h-4 cursor-pointer" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="min-w-[6rem]">
+                        <DropdownMenuItem onClick={() => handleEdit(row)}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleView(row)}>
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                              >
+                                Delete
+                              </span>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Are you absolutely sure?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will delete
+                                  your details and remove your data from our
+                                  servers.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={(e) => {
+                                    // console.log("Deleting row:", row.original);
+                                    handleDelete(row.original.product_id);
+                                  }}
+                                  className={buttonVariants({
+                                    variant: "destructive",
+                                  })}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))
@@ -308,8 +316,49 @@ export function DataTable({ columns, data }) {
             )}
           </TableBody>
         </Table>
+
+        {viewData && (
+          <Modal
+            isOpen={isViewModalOpen}
+            onClose={() => setIsViewModalOpen(false)}
+            title="Order details"
+          >
+            <div className="flex flex-col gap-4">
+              {Object.entries(viewData).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-2">
+                  <h4 className="uppercase">{key.replace(/_/g, " ")}</h4>
+                  <p>{value}</p>
+                </div>
+              ))}
+            </div>
+          </Modal>
+        )}
+
+        {editData && (
+          <Modal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            title="Edit details"
+          >
+            <div className="flex flex-col gap-4">
+              {Object.entries(editData).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-2">
+                  <h4 className="uppercase">{key.replace(/_/, " ")}</h4>
+                  <Input
+                    value={value}
+                    onChange={(e) => handleInputChange(key, e.target.value)}
+                  />
+                </div>
+              ))}
+              <div className="flex justify-end">
+                <Button onClick={handleSaveEdit}>Save Changes</Button>
+              </div>
+            </div>
+          </Modal>
+        )}
       </div>
-      <div className="flex items-center gap-5 p-4  justify-end">
+
+      <div className="flex items-center gap-5  justify-end">
         <Button
           variant="outline"
           size="md"

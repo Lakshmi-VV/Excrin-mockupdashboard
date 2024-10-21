@@ -1,7 +1,5 @@
 "use client";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SquarePen } from "lucide-react";
-import { Editcell } from "./editcell";
 
 export const columns = [
   {
@@ -29,46 +27,37 @@ export const columns = [
   {
     accessorKey: "product_id",
     header: "Product Id",
-    cell: Editcell,
   },
   {
     accessorKey: "date",
     header: "Date",
-    cell: Editcell,
   },
   {
     accessorKey: "customer",
     header: "Customer",
-    cell: Editcell,
   },
   {
     accessorKey: "status",
     header: "Status",
-    cell: Editcell,
   },
   {
     accessorKey: "email",
     header: "Email",
-    cell: Editcell,
   },
   {
     accessorKey: "country",
     header: "Country",
-    cell: Editcell,
   },
   {
     accessorKey: "total_price",
     header: "Total Price",
-    cell: Editcell,
   },
   {
     accessorKey: "quantity",
     header: "Quantity",
-    cell: Editcell,
   },
   {
     accessorKey: "payment_method",
     header: "Payment",
-    cell: Editcell,
   },
 ];
