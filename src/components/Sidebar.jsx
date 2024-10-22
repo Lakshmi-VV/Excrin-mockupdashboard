@@ -29,12 +29,12 @@ function Sidebar() {
     {
       label: "Dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
-      path: "/",
+      path: "/dashboard",
     },
     {
       label: "Orders",
       icon: <ShoppingCart className="w-5 h-5" />,
-      path: "/orders",
+      path: "/dashboard/orders",
     },
   ];
   return (

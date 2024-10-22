@@ -67,7 +67,7 @@ function OrderPage() {
                   handleSubmit();
                   toast({
                     description: "Your order has been created.",
-                    duration: 1000,
+                    duration: 3000,
                   });
                 }}
               >
