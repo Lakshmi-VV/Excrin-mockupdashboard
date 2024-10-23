@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 function Reset() {
+  const [isClient, setIsClient] = React.useState(false);
   const router = useRouter();
   const [resetForm, setResetForm] = React.useState({
     email: "",
@@ -38,6 +39,10 @@ function Reset() {
     }
   }, [step, sendCode.seconds]);
 
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const iconToggle = (type) => {
     setToggle((prev) => ({ ...prev, [type]: !prev[type] }));
   };
@@ -65,9 +70,11 @@ function Reset() {
     return error === null;
   };
 
-  const user = JSON.parse(localStorage.getItem("userDetails")).find(
-    (user) => user.email === resetForm.email
-  );
+  const user = isClient
+    ? JSON.parse(localStorage.getItem("userDetails")).find(
+        (user) => user.email === resetForm.email
+      )
+    : null;
   const username = user ? user.name : null;
 
   const handleInputChange = (e) => {
@@ -77,17 +84,20 @@ function Reset() {
       [name]: value,
       errors: { ...prev.errors, [name]: "" },
     }));
-    if (name === "password") {
+    if (name === "password" && isClient) {
       updateLocalStorage(resetForm.email, value);
     }
   };
 
   const updateLocalStorage = (email, password) => {
-    const existingUsers = JSON.parse(localStorage.getItem("userDetails")) || [];
-    const existingUser = existingUsers.find((user) => user.email === email);
-    if (existingUser) {
-      existingUser.password = password;
-      localStorage.setItem("userDetails", JSON.stringify(existingUsers));
+    if (isClient) {
+      const existingUsers =
+        JSON.parse(localStorage.getItem("userDetails")) || [];
+      const existingUser = existingUsers.find((user) => user.email === email);
+      if (existingUser) {
+        existingUser.password = password;
+        localStorage.setItem("userDetails", JSON.stringify(existingUsers));
+      }
     }
   };
 
@@ -172,7 +182,7 @@ function Reset() {
 
             <div>
               <div className="relative flex items-center">
-                <Mail className="h-4 w-4 absolute left-3" />
+                <Mail className="h-[48px] w-4 absolute left-3" />
                 <Input
                   placeholder="Pietro@gmail.com"
                   className="px-10"
